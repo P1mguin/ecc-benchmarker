@@ -4,6 +4,7 @@ from os import urandom
 from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
+from vcgencmd import Vcgencmd
 import time
 
 import pyRAPL
@@ -271,8 +272,7 @@ class CurveTester:
         self.result['decryption']['power'].append(round(average(meter.result.pkg), 3))
 
     def _test_rpi(self):
-        # vcgm = Vcgencmd()
-        vcgm = None
+        vcgm = Vcgencmd()
         cipher_elg = ElGamal(self.curve)
 
         # Measure key generation
