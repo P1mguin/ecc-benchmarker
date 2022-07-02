@@ -1,0 +1,6 @@
+Curve Type,160,192,224,255,256,320,384,448,512,521
+Short Weierstrass,,0.68,1.17,1.25,1.22,,3.39,4.25,,6.09
+Montgomery,,,,1.75,,,,4.89,,
+Twisted Brainpool,0.54,0.75,0.98,,1.24,1.98,3.47,,6.46,
+Short Weierstrass Brainpool,0.52,0.69,0.95,,1.28,2.09,2.85,,5.39,
+Twisted Edwards,,,,2.18,,,,9.83,,

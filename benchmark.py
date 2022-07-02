@@ -1,10 +1,11 @@
+import csv
 from concurrent.futures import ThreadPoolExecutor
 from math import log2, ceil
 from os import urandom
 from typing import List
 import numpy as np
 import matplotlib.pyplot as plt
-from vcgencmd import Vcgencmd
+# from vcgencmd import Vcgencmd
 import time
 
 import pyRAPL
@@ -29,7 +30,7 @@ SIZES = [
     32,
 ]
 
-N = 100
+N = 1500
 MAX_CURVE_THREADS = 25
 MAX_CURVE_TYPE_THREADS = 5
 MAX_MESSAGE_THREADS = 6
@@ -63,14 +64,16 @@ def get_curves():
 
 def average(list: List[float]) -> float:
     if list is None or len(list) == 0:
-	    return
+        return
     return sum(list) / len(list)
 
 
 class Benchmarker:
-    def __init__(self, is_laptop: bool, n: int):
+    def __init__(self, is_laptop: bool, is_plot: bool, is_table: bool, n: int):
         self.n = n
         self.is_laptop = is_laptop
+        self.is_plot = is_plot
+        self.is_table = is_table
         self.raw_result = {}
         self.result = {}
 
@@ -79,8 +82,14 @@ class Benchmarker:
         self._measure()
         # Process
         self._process_data()
-        # Plot
-        self._plot_data()
+
+        if self.is_plot:
+            # Plot
+            self._plot_data()
+
+        if self.is_table:
+            # Print table
+            self._safe_table()
 
     def _measure(self):
         executor = ThreadPoolExecutor(max_workers=MAX_TESTER_THREADS)
@@ -146,6 +155,34 @@ class Benchmarker:
 
         plt.show()
 
+    def _safe_table(self):
+        # Prints the table per message_size, process and measurement type combination
+        for message_size, message_size_values in self.result.items():
+            for process, process_values in message_size_values.items():
+                for measurement, measurement_values in process_values.items():
+                    key_sizes = set()
+                    for curve_type, curve_type_values in measurement_values.items():
+                        for key in curve_type_values.keys():
+                            key_sizes.add(key)
+
+                    key_sizes = list(key_sizes)
+                    key_sizes.sort()
+
+                    key_indices = {}
+                    for i in range(len(key_sizes)):
+                        key_size = key_sizes[i]
+                        key_indices[key_size] = i
+
+                    title = f"{message_size}-{process}-{measurement}"
+
+                    with open(f"results/n={N}/{title}.csv", "w") as output:
+                        writer = csv.writer(output)
+                        writer.writerow(['Curve Type'] + [str(key_size) for key_size in key_sizes])
+                        for curve_type, curve_type_values in measurement_values.items():
+                            row = [curve_type] + [None] * len(key_sizes)
+                            for key, value in curve_type_values.items():
+                                row[key_indices[key] + 1] = str(value)
+                            writer.writerow(row)
 
     def _test_message(self, message_size):
         message_result = MessageTester(message_size=message_size, is_laptop=self.is_laptop, n=self.n).test_message()
@@ -272,7 +309,8 @@ class CurveTester:
         self.result['decryption']['power'].append(round(average(meter.result.pkg), 3))
 
     def _test_rpi(self):
-        vcgm = Vcgencmd()
+        # vcgm = Vcgencmd()
+        vcgm = None
         cipher_elg = ElGamal(self.curve)
 
         # Measure key generation
@@ -282,7 +320,8 @@ class CurveTester:
         key_generation_time_end = time.time()
         key_generation_voltage_end = vcgm.measure_volts('core')
         self.result['key_generation']['time'].append(round(key_generation_time_end - key_generation_time_start, 3))
-        self.result['key_generation']['power'].append(round(key_generation_voltage_end - key_generation_voltage_start, 3))
+        self.result['key_generation']['power'].append(
+            round(key_generation_voltage_end - key_generation_voltage_start, 3))
 
         # Measure decryption
         decryption_voltage_start = vcgm.measure_volts('core')
@@ -308,4 +347,6 @@ class CurveTester:
 
 if __name__ == '__main__':
     is_laptop = not input("Laptop: y/n:\n") == "n"
-    Benchmarker(is_laptop=is_laptop, n=N).benchmark()
+    is_plot = not input("Plot Data: y/n:\n") == "n"
+    is_table = not input("Save Table: y/n:\n") == "n"
+    Benchmarker(is_laptop=is_laptop, is_plot=is_plot, is_table=is_table, n=N).benchmark()

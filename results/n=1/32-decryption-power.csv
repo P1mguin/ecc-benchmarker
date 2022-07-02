@@ -1,0 +1,6 @@
+Curve Type,320,384,448,512,521
+ShortWeierstrassCurves,,1856013.0,2551263.0,,3599112.0
+MontgomeryCurves,,,2505487.0,,
+BrainpoolCurvesT1,1864314.0,1805110.0,,3435355.0,
+BrainpoolCurvesR1,1202511.0,1850459.0,,3547537.0,
+EdwardsCurves,,,4645923.0,,
